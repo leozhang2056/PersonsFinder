@@ -8,7 +8,11 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface LocationRepository : JpaRepository<Location, Long> {
+
+    // ==================== Custom queries ====================
+
     fun findByPersonId(personId: Long): Location?
+
     fun deleteByPersonId(personId: Long)
 
     @Query(

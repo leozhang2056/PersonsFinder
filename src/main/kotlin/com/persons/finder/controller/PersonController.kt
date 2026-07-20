@@ -11,7 +11,6 @@ import com.persons.finder.vo.CreatePersonRequest
 import com.persons.finder.vo.LocationResponse
 import com.persons.finder.vo.LocationUpdateRequest
 import com.persons.finder.vo.NearbyPersonResponse
-import com.persons.finder.vo.PageResult
 import com.persons.finder.vo.PersonAssembler.hobbiesList
 import com.persons.finder.vo.PersonAssembler.toResponse
 import com.persons.finder.vo.PersonAssembler.validateLatitude
@@ -22,7 +21,16 @@ import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.util.concurrent.CompletableFuture
 
 @RestController
@@ -35,12 +43,15 @@ class PersonController(
     @Value("\${app.nearby.default-radius:10}") private val defaultRadius: Double,
     @Value("\${app.nearby.adaptive-max-radius:20000.0}") private val maxAdaptiveRadius: Double
 ) {
+
     companion object {
         const val MAX_NAME_LENGTH = 100
         const val MAX_JOB_LENGTH = 100
         const val MAX_HOBBY_LENGTH = 80
         const val DEFAULT_TARGET_COUNT = 30
     }
+
+    // ==================== POST /persons ====================
 
     @PostMapping
     @Operation(summary = "Create a person", description = "Creates a new person with AI-generated bio based on job title and hobbies. Includes prompt injection protection.")
@@ -72,6 +83,8 @@ class PersonController(
         }
     }
 
+    // ==================== PUT /persons/{id}/location ====================
+
     @PutMapping("/{id}/location")
     @Operation(summary = "Update location", description = "Updates the current location of a person. Subsequent updates overwrite the previous location.")
     fun updateLocation(
@@ -81,10 +94,14 @@ class PersonController(
     ): ApiResponse<PersonResponse> {
         validateLatitude(request.latitude)
         validateLongitude(request.longitude)
+
         val person = personsService.getById(id)
         locationsService.addLocation(Location(personId = person.id, latitude = request.latitude, longitude = request.longitude))
+
         return ApiResponse.success(person.toResponse(request.latitude, request.longitude))
     }
+
+    // ==================== GET /persons/nearby ====================
 
     @GetMapping("/nearby")
     @Operation(summary = "Nearby search", description = "Finds people near a given latitude/longitude within a radius. When radius is omitted, adaptive search expands from 5km until enough people are found.")
@@ -105,6 +122,7 @@ class PersonController(
         @RequestParam(defaultValue = "100") max: Int,
     ): ApiResponse<List<NearbyPersonResponse>> {
         val start = System.currentTimeMillis()
+
         val queryLatitude = latitude ?: lat ?: throw IllegalArgumentException("latitude is required")
         val queryLongitude = longitude ?: lon ?: throw IllegalArgumentException("longitude is required")
         validateLatitude(queryLatitude)
@@ -141,20 +159,12 @@ class PersonController(
         return ApiResponse.success(result, elapsed)
     }
 
+    // ==================== GET /persons  /  GET /persons/{id} ====================
+
     @GetMapping
-    @Operation(summary = "List all person IDs", description = "Returns a paginated list of all person IDs in the database. Default: page=0, size=20.")
-    fun getAllPersonIds(
-        @Parameter(description = "Page number (0-based)", example = "0")
-        @RequestParam(defaultValue = "0") page: Int,
-        @Parameter(description = "Page size", example = "20")
-        @RequestParam(defaultValue = "20") size: Int
-    ): ApiResponse<PageResult<Long>> {
-        require(page >= 0) { "page must be >= 0" }
-        require(size in 1..1000) { "size must be between 1 and 1000" }
-        val totalItems = personsService.countAll()
-        val items = personsService.findAllPaginated(page, size).map { it.id }
-        return ApiResponse.success(PageResult.of(items, page, size, totalItems))
-    }
+    @Operation(summary = "List all person IDs", description = "Returns a list of all person IDs in the database.")
+    fun getAllPersonIds(): ApiResponse<List<Long>> =
+        ApiResponse.success(personsService.findAll().map { it.id })
 
     @GetMapping("/{id}")
     @Operation(summary = "Get person details", description = "Returns full person details (including location and AI bio) by ID.")
@@ -167,6 +177,8 @@ class PersonController(
         return ApiResponse.success(person.toResponse(location?.latitude, location?.longitude))
     }
 
+    // ==================== POST /persons/seed ====================
+
     @RequestMapping("/seed", method = [RequestMethod.GET, RequestMethod.POST])
     @Operation(summary = "Seed test data", description = "Populates the database with globally distributed random data for performance testing. count=1000~1000000.")
     fun seedData(
@@ -174,12 +186,16 @@ class PersonController(
         @RequestParam(defaultValue = "1000") count: Int
     ): ApiResponse<Map<String, Any>> {
         val result = seedDataService.seed(count)
-        return ApiResponse.success(mapOf(
-            "inserted" to result.inserted,
-            "elapsedSeconds" to result.elapsedSeconds,
-            "ratePerSecond" to result.ratePerSecond
-        ))
+        return ApiResponse.success(
+            mapOf(
+                "inserted" to result.inserted,
+                "elapsedSeconds" to result.elapsedSeconds,
+                "ratePerSecond" to result.ratePerSecond
+            )
+        )
     }
+
+    // ==================== Exception handlers ====================
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(exception: IllegalArgumentException): ResponseEntity<ApiResponse<Nothing>> {

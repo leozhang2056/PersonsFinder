@@ -10,8 +10,6 @@
 src/
 ├── main/kotlin/com/persons/finder/
 │   ├── ApplicationStarter.kt          # 启动入口 + 根路径→Swagger 重定向
-│   ├── config/
-│   │   └── DataInitializer.kt         # 启动时自动填充种子数据
 │   ├── controller/
 │   │   └── PersonController.kt        # REST API 控制器
 │   ├── domain/

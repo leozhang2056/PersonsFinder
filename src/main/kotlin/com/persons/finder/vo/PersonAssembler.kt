@@ -1,7 +1,10 @@
 package com.persons.finder.vo
 
 import com.persons.finder.domain.Person
+
 object PersonAssembler {
+
+    // ==================== Entity → DTO ====================
 
     fun Person.toResponse(latitude: Double?, longitude: Double?): PersonResponse {
         return PersonResponse(
@@ -16,6 +19,8 @@ object PersonAssembler {
 
     fun Person.hobbiesList(): List<String> =
         hobbies.split(",").map { it.trim() }.filter { it.isNotBlank() }
+
+    // ==================== Validation ====================
 
     fun validateLatitude(latitude: Double) {
         require(latitude in -90.0..90.0) { "latitude must be between -90 and 90" }

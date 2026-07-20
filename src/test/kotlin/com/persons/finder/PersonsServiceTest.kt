@@ -4,12 +4,12 @@ import com.persons.finder.domain.Person
 import com.persons.finder.mapper.PersonRepository
 import com.persons.finder.service.PersonsServiceImpl
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.util.Optional
@@ -20,8 +20,12 @@ class PersonsServiceTest {
     @MockK
     private lateinit var personRepository: PersonRepository
 
-    @InjectMockKs
     private lateinit var personsService: PersonsServiceImpl
+
+    @BeforeEach
+    fun setUp() {
+        personsService = PersonsServiceImpl(personRepository)
+    }
 
     @Test
     fun `save should persist person`() {

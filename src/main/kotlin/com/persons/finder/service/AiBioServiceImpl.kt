@@ -1,10 +1,12 @@
-﻿package com.persons.finder.service
+package com.persons.finder.service
 
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 
 @Service
 class AiBioServiceImpl : AiBioService {
+
+    // ==================== Bio generation ====================
 
     override fun generateBio(jobTitle: String, hobbies: List<String>): CompletableFuture<String> {
         val safeJob = sanitize(jobTitle).ifBlank { "curious human" }
@@ -24,6 +26,8 @@ class AiBioServiceImpl : AiBioService {
         }
     }
 
+    // ==================== Injection sanitization ====================
+
     internal fun sanitize(value: String): String {
         val blockedPatterns = listOf(
             Regex("ignore\\s+(all\\s+)?(previous\\s+)?instructions?", RegexOption.IGNORE_CASE),
@@ -42,13 +46,14 @@ class AiBioServiceImpl : AiBioService {
             Regex("pwned", RegexOption.IGNORE_CASE)
         )
 
-        val cleaned = value.replace(Regex("[\\r\\n`<>]"), " ")
+        val cleaned = value
+            .replace(Regex("[\\r\\n`<>]"), " ")
             .replace(Regex("\\s+"), " ")
             .trim()
             .take(80)
             .trim(' ', '.', ',', ';', ':', '-', '_', '\'', '"')
 
-        // Block entire field on injection match — caller will use default value instead
+        // Block entire field on injection match — caller uses default value
         if (blockedPatterns.any { it.containsMatchIn(cleaned) }) {
             return ""
         }

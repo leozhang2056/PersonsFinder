@@ -36,6 +36,8 @@ class LocationsServiceTest {
             adaptivePadding = 50
         )
     }
+
+    @Test
     fun `distance between same point should be zero`() {
         val distance = locationsService.distanceInKm(40.7128, -74.0060, 40.7128, -74.0060)
         assertEquals(0.0, distance, 0.001)
@@ -72,13 +74,10 @@ class LocationsServiceTest {
         assertEquals(20015.0, distance, 30.0)
     }
 
-    // ========== findAround (bounding box + native SQL) ==========
-
     @Test
     fun `findAround should return locations within radius`() {
         val center = Location(personId = 100, latitude = 40.0, longitude = -74.0)
         val nearby = Location(personId = 101, latitude = 40.1, longitude = -74.0)
-        val far = Location(personId = 102, latitude = 41.0, longitude = -74.0)
 
         every { locationRepository.findWithinBounds(any(), any(), any(), any(), any(), any(), any()) } returns listOf(center, nearby)
 
@@ -144,8 +143,6 @@ class LocationsServiceTest {
         }
     }
 
-    // ========== addLocation ==========
-
     @Test
     fun `addLocation should save when no existing location`() {
         val location = Location(personId = 1, latitude = 40.0, longitude = -74.0)
@@ -189,16 +186,12 @@ class LocationsServiceTest {
         }
     }
 
-    // ========== removeLocation ==========
-
     @Test
     fun `removeLocation should delegate to repository`() {
         every { locationRepository.deleteByPersonId(1) } just runs
         locationsService.removeLocation(1)
         verify { locationRepository.deleteByPersonId(1) }
     }
-
-    // ========== findByPersonId ==========
 
     @Test
     fun `findByPersonId should return location when exists`() {
@@ -220,8 +213,6 @@ class LocationsServiceTest {
         val result = locationsService.findByPersonId(999)
         assertEquals(null, result)
     }
-
-    // ========== addAllLocations ==========
 
     @Test
     fun `addAllLocations should save all`() {

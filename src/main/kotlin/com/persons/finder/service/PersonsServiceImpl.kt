@@ -1,4 +1,4 @@
-﻿package com.persons.finder.service
+package com.persons.finder.service
 
 import com.persons.finder.domain.Person
 import com.persons.finder.mapper.PersonRepository
@@ -25,6 +25,19 @@ class PersonsServiceImpl(
         return personRepository.saveAll(persons)
     }
 
+    override fun findAll(): List<Person> = personRepository.findAll()
+
+    override fun findAllPaginated(page: Int, size: Int): List<Person> {
+        val start = page.toLong() * size
+        return personRepository.findAllWithLimit(size.toLong(), start)
+    }
+
+    override fun countAll(): Long = personRepository.countAll()
+
+    fun existsById(id: Long): Boolean = personRepository.existsById(id)
+
+    // ==================== Seed bio helper ====================
+
     override fun generateSeedBio(jobTitle: String, hobbies: List<String>): String {
         val safeJob = jobTitle.ifBlank { "curious human" }
         val hobbyText = when (hobbies.size) {
@@ -34,16 +47,4 @@ class PersonsServiceImpl(
         }
         return "A $safeJob who turns $hobbyText into surprisingly good conversation."
     }
-
-    override fun findAll(): List<Person> = personRepository.findAll()
-
-    override fun findAllPaginated(page: Int, size: Int): List<Person> {
-        val start = (page.toLong()) * size
-        val limit = size.toLong()
-        return personRepository.findAllWithLimit(limit, start)
-    }
-
-    override fun countAll(): Long = personRepository.countAll()
-
-    fun existsById(id: Long): Boolean = personRepository.existsById(id)
 }

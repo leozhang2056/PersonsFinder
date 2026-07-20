@@ -5,7 +5,13 @@ import com.persons.finder.mapper.LocationRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 @Service
 class LocationsServiceImpl(
@@ -20,7 +26,6 @@ class LocationsServiceImpl(
     override fun addLocation(location: Location) {
         validateLatitude(location.latitude)
         validateLongitude(location.longitude)
-
         val existing = locationRepository.findByPersonId(location.personId)
         if (existing != null) {
             existing.latitude = location.latitude
@@ -41,19 +46,20 @@ class LocationsServiceImpl(
         locationRepository.deleteByPersonId(personId)
     }
 
-    override fun findByPersonId(personId: Long): Location? = locationRepository.findByPersonId(personId)
+    override fun findByPersonId(personId: Long): Location? =
+        locationRepository.findByPersonId(personId)
 
     override fun findAround(latitude: Double, longitude: Double, radiusInKm: Double): List<Location> {
         validateLatitude(latitude)
         validateLongitude(longitude)
-        require(radiusInKm >= 0) { "radius must be greater than or equal to 0" }
+        require(radiusInKm >= 0) { "radius must be >= 0" }
         return findAround(latitude, longitude, radiusInKm, defaultLimit)
     }
 
     override fun findAround(latitude: Double, longitude: Double, radiusInKm: Double, limit: Int): List<Location> {
         validateLatitude(latitude)
         validateLongitude(longitude)
-        require(radiusInKm >= 0) { "radius must be greater than or equal to 0" }
+        require(radiusInKm >= 0) { "radius must be >= 0" }
         require(limit > 0) { "limit must be > 0" }
 
         val deltaLat = Math.toDegrees(radiusInKm / earthRadiusKm)
@@ -66,7 +72,7 @@ class LocationsServiceImpl(
 
         val candidates = locationRepository.findWithinBounds(latitude, longitude, minLat, maxLat, minLon, maxLon, limit)
 
-        // SQL already sorts by Haversine distance, re-filter precisely for corner cases
+        // SQL already sorts by Haversine distance; re-filter precisely for corner cases
         return candidates
             .map { it to distanceInKm(latitude, longitude, it.latitude, it.longitude) }
             .filter { it.second <= radiusInKm }
@@ -74,7 +80,6 @@ class LocationsServiceImpl(
             .map { it.first }
     }
 
-    // Adaptive radius search: starts small and doubles until enough people are found
     override fun findAroundAdaptive(
         latitude: Double,
         longitude: Double,
@@ -94,18 +99,18 @@ class LocationsServiceImpl(
             }
             radius *= 2.0
         }
+
         val result = findAround(latitude, longitude, maxRadiusKm, targetCount + adaptivePadding)
         return result.take(targetCount) to maxRadiusKm
     }
 
     override fun distanceInKm(fromLatitude: Double, fromLongitude: Double, toLatitude: Double, toLongitude: Double): Double {
-        val latitudeDelta = Math.toRadians(toLatitude - fromLatitude)
-        val longitudeDelta = Math.toRadians(toLongitude - fromLongitude)
-        val fromLatRadians = Math.toRadians(fromLatitude)
-        val toLatRadians = Math.toRadians(toLatitude)
+        val latDelta = Math.toRadians(toLatitude - fromLatitude)
+        val lonDelta = Math.toRadians(toLongitude - fromLongitude)
+        val fromLat = Math.toRadians(fromLatitude)
+        val toLat = Math.toRadians(toLatitude)
 
-        val a = sin(latitudeDelta / 2).pow(2.0) +
-            cos(fromLatRadians) * cos(toLatRadians) * sin(longitudeDelta / 2).pow(2.0)
+        val a = sin(latDelta / 2).pow(2.0) + cos(fromLat) * cos(toLat) * sin(lonDelta / 2).pow(2.0)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
         return earthRadiusKm * c

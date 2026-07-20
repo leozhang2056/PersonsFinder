@@ -10,8 +10,6 @@ Welcome to the **Persons Finder** backend challenge! This project simulates the 
 src/
 ├── main/kotlin/com/persons/finder/
 │   ├── ApplicationStarter.kt          # Entry point + root → Swagger redirect
-│   ├── config/
-│   │   └── DataInitializer.kt         # Auto-seed on startup
 │   ├── controller/
 │   │   └── PersonController.kt        # REST API controller
 │   ├── domain/

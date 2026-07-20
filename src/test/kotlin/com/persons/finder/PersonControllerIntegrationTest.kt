@@ -122,22 +122,17 @@ class PersonControllerIntegrationTest {
 
     @Test
     @Order(5)
-    fun `GET all ids should return paginated list containing created person`() {
-        val response = getForMap("http://localhost:$port/persons?page=0&size=100")
+    fun `GET all ids should return list containing created person`() {
+        val response = getForMap("http://localhost:$port/persons")
 
         Assertions.assertEquals(HttpStatus.OK, response.statusCode)
         Assertions.assertNotNull(response.body)
         Assertions.assertTrue(response.body!!["success"] as Boolean)
 
         @Suppress("UNCHECKED_CAST")
-        val pageData = response.body!!["data"] as Map<String, Any>
-        Assertions.assertTrue(pageData.containsKey("items"))
-        Assertions.assertTrue(pageData.containsKey("totalItems"))
-        Assertions.assertTrue(pageData.containsKey("totalPages"))
-        @Suppress("UNCHECKED_CAST")
-        val items = pageData["items"] as List<Number>
-        val ids = items.map { it.toLong() }
-        Assertions.assertTrue(ids.contains(createdPersonId))
+        val ids = response.body!!["data"] as List<Number>
+        val idList = ids.map { it.toLong() }
+        Assertions.assertTrue(idList.contains(createdPersonId))
     }
 
     @Test

@@ -46,7 +46,7 @@ When a pattern matches, the system strips the matched text and returns a sanitiz
 - Global city distribution: 30 cities across 6 continents
 - Progress logging every 3 seconds
 
-**My Adjustment:** Also extracted `DataInitializer` (startup auto-seed via `CommandLineRunner`) and `PersonAssembler` (entity→VO conversion + validation helpers). Code climate went from ~280 lines in the controller down to ~150, with clear responsibilities.
+**My Adjustment:** Also extracted `PersonAssembler` (entity→VO conversion + validation helpers). Code climate went from ~280 lines in the controller down to ~150, with clear responsibilities.
 
 ---
 

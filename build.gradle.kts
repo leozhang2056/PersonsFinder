@@ -1,4 +1,4 @@
-﻿import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 	id("org.springframework.boot") version "2.7.0"
@@ -6,6 +6,7 @@ plugins {
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
 	kotlin("plugin.jpa") version "1.6.21"
+	id("io.gitlab.arturbosch.detekt") version "1.21.0"
 }
 
 group = "com.persons.finder"
@@ -39,3 +40,16 @@ tasks.withType<Test> {
 	useJUnitPlatform()
 }
 
+// detekt - 静态代码分析
+detekt {
+	input.setFrom("src/main/kotlin", "src/test/kotlin")
+	config.setFrom("detekt-config.yml")
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
+}
+
+tasks.named("check") {
+	dependsOn("detekt")
+}
