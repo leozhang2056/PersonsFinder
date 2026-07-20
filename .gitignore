@@ -35,6 +35,11 @@ data/
 src/main/resources/application-dev.properties
 src/main/resources/application-prod.properties
 
+# === Claude / 工具文件（不提交）===
+.commandcode/
+AGENTS.md
+CLAUDE.md
+
 # === 系统文件 ===
 .DS_Store
 Thumbs.db
