@@ -7,5 +7,7 @@ interface PersonsService {
     fun save(person: Person): Person
     fun saveAll(persons: List<Person>): List<Person>
     fun findAll(): List<Person>
+    fun findAllPaginated(page: Int, size: Int): List<Person>
+    fun countAll(): Long
     fun generateSeedBio(jobTitle: String, hobbies: List<String>): String
 }

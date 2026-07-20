@@ -37,5 +37,13 @@ class PersonsServiceImpl(
 
     override fun findAll(): List<Person> = personRepository.findAll()
 
+    override fun findAllPaginated(page: Int, size: Int): List<Person> {
+        val start = (page.toLong()) * size
+        val limit = size.toLong()
+        return personRepository.findAllWithLimit(limit, start)
+    }
+
+    override fun countAll(): Long = personRepository.countAll()
+
     fun existsById(id: Long): Boolean = personRepository.existsById(id)
 }
