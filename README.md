@@ -120,7 +120,6 @@ gradlew.bat build        # Windows CMD
 Access the application at:
 - 🌐 **API**: `http://localhost:5000` (redirects to Swagger)
 - 📖 **Swagger UI**: `http://localhost:5000/swagger-ui/index.html`
-- 🗄️ **H2 Console**: `http://localhost:5000/h2-console`
 
 ---
 
@@ -284,6 +283,8 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 - **JDBC URL**: `jdbc:h2:mem:persons_finder`
 - **User**: `sa`
 - **Password**: `password`
+
+This completes the database section. For more details on connecting from IntelliJ IDEA, see the JDBC info above.
 
 ### Database Connection Details
 

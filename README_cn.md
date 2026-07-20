@@ -120,7 +120,6 @@ gradlew.bat build        # Windows CMD
 启动后访问：
 - 🌐 **API 地址**: `http://localhost:5000`（自动重定向到 Swagger）
 - 📖 **Swagger 文档**: `http://localhost:5000/swagger-ui/index.html`
-- 🗄️ **H2 控制台**: `http://localhost:5000/h2-console`
 
 ---
 
