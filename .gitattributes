@@ -1,0 +1,13 @@
+* text=auto
+
+*.kt text eol=crlf
+*.kts text eol=crlf
+*.md text eol=crlf
+*.properties text eol=crlf
+*.yml text eol=crlf
+*.yaml text eol=crlf
+*.xml text eol=crlf
+
+*.png binary
+*.jar binary
+*.gradle binary

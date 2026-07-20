@@ -1,1 +1,1 @@
-rootProject.name = "PersonsFinder"
+﻿rootProject.name = "PersonsFinder"

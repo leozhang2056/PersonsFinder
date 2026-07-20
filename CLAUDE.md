@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**PersonsFinder** is a Spring Boot + Kotlin backend challenge project — a REST API for a mobile app that finds people nearby. It uses an H2 in-memory database and is set up with a layered architecture (Controller → Service → Data). The project is currently **scaffolded with stubs** — most service methods and controller endpoints are `TODO("Not yet implemented")`.
+**PersonsFinder** is a Spring Boot + Kotlin backend challenge project — a REST API for a mobile app that finds people nearby. It uses an H2 file-based database and is set up with a layered architecture (Controller → Service → Repository → Entity). The project has been fully implemented with all REST endpoints, AI biography generation, Haversine distance calculation, and prompt-injection protection.
 
 ## Build & Run Commands
 
@@ -31,58 +31,74 @@ Tests use JUnit 5 via `useJUnitPlatform()`.
 
 ```
 src/
-├── main/
-│   ├── kotlin/com/persons/finder/
-│   │   ├── ApplicationStarter.kt       # @SpringBootApplication entry point
-│   │   ├── data/
-│   │   │   ├── Person.kt               # Person entity (id, name — incomplete vs reqs)
-│   │   │   └── Location.kt             # Location entity (referenceId, lat, lon)
-│   │   ├── domain/services/
-│   │   │   ├── PersonsService.kt       # Interface: getById, save
-│   │   │   ├── PersonsServiceImpl.kt   # Stub — all methods TODO
-│   │   │   ├── LocationsService.kt     # Interface: addLocation, removeLocation, findAround
-│   │   │   └── LocationsServiceImpl.kt # Stub — all methods TODO
-│   │   └── presentation/
-│   │       └── PersonController.kt     # REST controller, map stubs — all endpoints TODO
-│   └── resources/
-│       └── application.properties      # H2 in-memory DB config
-└── test/
-    └── kotlin/com/persons/finder/
-        └── DemoApplicationTests.kt     # Single context-loads test
+├── main/kotlin/com/persons/finder/
+│   ├── ApplicationStarter.kt       # @SpringBootApplication entry point
+│   ├── controller/
+│   │   └── PersonController.kt     # REST endpoints (POST/PUT/GET)
+│   ├── domain/
+│   │   ├── Person.kt               # JPA Entity: id, name, jobTitle, hobbies, bio
+│   │   └── Location.kt             # JPA Entity: id, personId, latitude, longitude
+│   ├── mapper/
+│   │   ├── PersonRepository.kt     # JpaRepository<Person, Long>
+│   │   └── LocationRepository.kt   # JpaRepository<Location, Long>
+│   ├── service/
+│   │   ├── PersonsService.kt       # Interface + implementation (CRUD)
+│   │   ├── PersonsServiceImpl.kt
+│   │   ├── LocationsService.kt     # Interface + Haversine implementation
+│   │   ├── LocationsServiceImpl.kt # findAround with distance calculation
+│   │   ├── AiBioService.kt         # Interface for bio generation
+│   │   └── AiBioServiceImpl.kt     # Mock implementation with prompt-injection sanitization
+│   └── vo/                         # Value Objects / DTOs
+│       ├── CreatePersonRequest.kt  # POST /persons request body
+│       ├── LocationUpdateRequest.kt# PUT /persons/{id}/location request body
+│       ├── LocationResponse.kt     # Location data in responses
+│       ├── PersonResponse.kt       # Person data in responses
+│       └── NearbyPersonResponse.kt # Nearby search result with distance
+├── main/resources/
+│   └── application.properties      # H2 file-based DB config
+└── test/kotlin/com/persons/finder/
+    ├── DemoApplicationTests.kt     # Context-loads test
+    ├── AiBioServiceTest.kt         # Unit tests for bio generation (7 cases)
+    └── PersonControllerIntegrationTest.kt  # Integration tests (7 ordered tests)
 ```
 
-**Key characteristics:**
-- Spring Boot 2.7.0, Kotlin 1.6.21, Java 11 (source compatibility)
-- H2 in-memory database (`jdbc:h2:mem:testdb`) with JPA/Hibernate
-- Gradle Kotlin DSL (`build.gradle.kts`)
-- No JPA `@Repository` interfaces exist yet — persistence is entirely TODO
-- No AI/bio generation service exists yet
-- No prompt-injection or PII security measures exist yet
-- The `Person` data class needs fields beyond `id`/`name` (job title, hobbies, bio, location)
-
-## Required API Endpoints (from README challenge)
+## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/persons` | Create person (name, job, hobbies, location) + generate AI bio |
-| PUT | `/api/v1/persons/{id}/location` | Update person's location (lat, lon) |
-| GET | `/api/v1/persons/nearby` | Find people near a location (lat, lon, radius) sorted by distance |
+| POST | `/persons` | Create person with AI-generated bio (returns 201) |
+| PUT | `/persons/{id}/location` | Update person's location |
+| GET | `/persons` | List all person IDs |
+| GET | `/persons/{id}` | Get person details with location |
+| GET | `/persons/nearby` | Find people near lat/lon within radius (sorted by distance) |
 
-## What Needs to Be Built
+## Code Formatting Standards
 
-1. **JPA Repositories** — `PersonRepository`, `LocationRepository` (or equivalent) extending `JpaRepository`
-2. **Person domain model** — expand `Person` with job title, hobbies, bio, and location fields
-3. **Service implementations** — fill in `PersonsServiceImpl` and `LocationsServiceImpl` (in-memory or JPA-backed)
-4. **Haversine distance calculation** — for `findAround` spatial queries
-5. **AI bio service** — interface + implementation (LLM call or mock) with prompt-injection safeguards
-6. **Controller endpoints** — implement the POST/PUT/GET endpoints in `PersonController`
-7. **Tests** — unit tests for services (especially the AI service), integration tests for endpoints
-8. **Deliverables** — `AI_LOG.md`, `SECURITY.md` (prompt injection, PII privacy)
+### Encoding
+- **UTF-8 without BOM** for all source files — enforced via `.editorconfig`
+- **CRLF line endings** (Windows) — enforced via `.gitattributes`
+- All `.md` files containing emoji/non-ASCII text use UTF-8; never open/save them with ANSI encoding
 
-## Tech Stack
+### Enforced by `.editorconfig` (auto-detected by IntelliJ IDEA, VS Code, etc.)
+- `charset = utf-8`
+- `end_of_line = crlf`
+- Kotlin: `indent_style = space`, `indent_size = 4`
+- Gradle (`.kts`): `indent_style = tab`, `indent_size = 4`
 
-- Kotlin 1.6.21, Java 11
-- Spring Boot 2.7.0 (Web, JPA starters)
-- H2 Database (embedded)
-- Gradle 7.x (wrapper included)
-- JUnit 5 + Spring Boot Test
+### Enforced by `.gitattributes`
+- `* text=auto` — Git auto-detects line endings
+- `.kt`, `.kts`, `.md`, `.properties` — `eol=crlf`
+- Binary files (`.png`, `.jar`) — `binary`
+
+### Error Handling
+- `IllegalArgumentException` → HTTP 400 (client error)
+- `NoSuchElementException` → HTTP 404 (not found)
+- All handled via `@ExceptionHandler` in `PersonController`
+
+## Key Implementation Details
+
+- **Haversine formula** in `LocationsServiceImpl` for great-circle distance (Earth radius ≈ 6371 km)
+- **Prompt injection protection** in `AiBioServiceImpl` using regex pattern blocking
+- **H2 file-based database** (`./data/persons_finder`) with auto DDL update
+- **Manual input validation** via Kotlin `require()`
+- **Two AI service implementations exist**: `AiBioServiceImpl` (active, in `service/`) and `MockBioService` (unused, in `ai/`) — clean up `domain/ai/` if no longer needed
