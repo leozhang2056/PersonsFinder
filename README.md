@@ -36,7 +36,7 @@ Find people around a query location (lat, lon, radius). ✅
 ### 🧪 Bonus Points
 *   **Scalability:** 1M records seeded, nearby search benchmarked (< 1s). ✅
 *   **Clean Code:** DDD-inspired package structure with interfaces. ✅
-*   **Testing:** 46 unit tests (7 AI service tests covering non-deterministic behavior). ✅
+*   **Testing:** 85 unit + integration tests (32 AI service tests covering non-deterministic behavior). ✅
 
 ### 📬 Submission
 > Repository: https://github.com/leozhang2056/PersonsFinder.git
@@ -74,10 +74,10 @@ src/
 │       ├── LocationResponse.kt        # Location response DTO
 │       └── NearbyPersonResponse.kt    # Nearby search response DTO
 ├── test/kotlin/com/persons/finder/
-│   ├── AiBioServiceTest.kt            # AI service unit tests (7)
-│   ├── PersonsServiceTest.kt          # Person service unit tests (8)
-│   ├── LocationsServiceTest.kt        # Location service unit tests (13)
-│   ├── PersonControllerIntegrationTest.kt  # Integration tests (7)
+│   ├── AiBioServiceTest.kt            # AI service unit tests (32)
+│   ├── PersonsServiceTest.kt          # Person service unit tests (9)
+│   ├── LocationsServiceTest.kt        # Location service unit tests (20)
+│   ├── PersonControllerIntegrationTest.kt  # Integration tests (23)
 │   └── DemoApplicationTests.kt        # Context load test
 └── resources/
     └── application.properties         # App configuration
@@ -207,13 +207,22 @@ POST /persons/seed?count=1000        # Small batch
 POST /persons/seed?count=1000000     # 1M performance test
 ```
 
-### 7️⃣ Auto-seed on startup
-
-Enable in `application.properties`:
+### 7️⃣ Multi-profile configuration
 
 ```properties
-app.seed.enabled=true
-app.seed.count=1000000
+# Default (shared config)
+app.nearby.default-radius=10
+
+# Dev profile (application-dev.properties)
+app.nearby.default-radius=5
+
+# Prod profile (application-prod.properties)
+app.nearby.default-radius=20
+```
+
+Run with profile:
+```bash
+./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
 
 ---
@@ -286,10 +295,10 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 
 | Test class | Count | Scope |
 |-----------|-------|-------|
-| `AiBioServiceTest` | 7 | Normal input, empty hobbies, injection defense, determinism |
-| `PersonsServiceTest` | 8 | CRUD, existence check, batch save, seed bio |
-| `LocationsServiceTest` | 13 | Distance calc (5), nearby search (6), CRUD (6) |
-| `PersonControllerIntegrationTest` | 7 | End-to-end integration |
+| `AiBioServiceTest` | 32 | Normal input, empty hobbies, injection defense, determinism |
+| `PersonsServiceTest` | 9 | CRUD, existence check, batch save, seed bio |
+| `LocationsServiceTest` | 20 | Distance calc (6), nearby search (7), CRUD (7) |
+| `PersonControllerIntegrationTest` | 23 | End-to-end integration |
 
 ---
 
@@ -308,60 +317,57 @@ See `SECURITY.md` for discussion on:
 
 ---
 
-## 📊 Performance (100万数据 H2 内存数据库)
+## 📊 Performance (1M records, H2 in-memory)
 
-### 数据插入
+### Data Insertion
 
-| 指标 | 数据 |
-|------|------|
-| 总插入量 | 1,000,000 条 person + 1,000,000 条 location |
-| 总耗时 | **42 秒** |
-| 插入速率 | **23,809 条/秒** |
-| 插入方式 | JDBC 批量插入（绕过 JPA，每批 500 条） |
+| Metric | Value |
+|--------|-------|
+| Total inserted | 1,000,000 persons + 1,000,000 locations |
+| Total time | **42 seconds** |
+| Insert rate | **23,809 records/second** |
+| Method | JDBC batch insert (bypasses JPA, 500 per batch) |
 
-### Nearby 接口查询耗时
+### Nearby Search Benchmarks
 
-| 搜索场景 | 半径 | 返回条数 | 耗时 |
-|----------|------|---------|------|
-| 自适应搜索（默认） | 自动扩展 | 30 | **0.35s** |
-| 自适应搜索（10条） | 自动扩展 | 10 | **0.34s** |
-| 固定半径 5km | 5km | 100 | **0.47s** |
-| 固定半径 10km | 10km | 100 | **0.48s** |
-| 固定半径 50km | 50km | 100 | **0.46s** |
-| 固定半径 100km | 100km | 100 | **0.50s** |
-| 固定半径 1000km | 1000km | 100 | **2.25s** |
-| 固定半径 2000km | 2000km | 100 | **4.15s** |
-| 固定半径 5000km | 5000km | 100 | **4.93s** |
+| Scenario | Radius | Results | Latency |
+|----------|--------|---------|---------|
+| Adaptive (default) | Auto-expand | 30 | **0.35s** |
+| Adaptive (10) | Auto-expand | 10 | **0.34s** |
+| Fixed 5km | 5km | 100 | **0.47s** |
+| Fixed 10km | 10km | 100 | **0.48s** |
+| Fixed 50km | 50km | 100 | **0.46s** |
+| Fixed 100km | 100km | 100 | **0.50s** |
+| Fixed 1000km | 1000km | 100 | **2.25s** |
+| Fixed 2000km | 2000km | 100 | **4.15s** |
+| Fixed 5000km | 5000km | 100 | **4.93s** |
 
-### 当前瓶颈分析
+### Current Bottlenecks
 
-**1. N+1 查询问题（主要瓶颈）**
-nearby 接口先查出 location 列表，再逐个 `getById` 查 person 信息。100 条结果 = 1 次 location 查询 + 100 次 person 查询。
+1. **N+1 query problem** — nearby endpoint queries locations, then fetches each person individually. 100 results = 1 location query + 100 person queries.
+2. **Large bounding box** — 1000km+ radius means H2 scans many rows for distance calculation.
+3. **Dual Haversine** — SQL computes distance in native query, then Kotlin re-computes for re-filtering.
 
-**2. 大半径时 Bounding Box 范围过大**
-1000km+ 半径时，bounding box 覆盖区域大，H2 需要扫描大量行做距离计算和排序。
+### Optimization Roadmap
 
-**3. SQL 层距离计算精度问题**
-native query 中的距离计算使用简化公式，与 Kotlin 层的精确 Haversine 存在微小偏差，导致需要二次过滤。
-
-### 优化方向
-
-| 优化项 | 预期效果 | 难度 |
-|--------|---------|------|
-| **JOIN 查询替代 N+1** | nearby 接口耗时降低 50%+ | 中 |
-| **Redis GeoHash 索引** | 大半径查询从秒级降到毫秒级 | 高 |
-| **空间索引（PostGIS / R-Tree）** | 1000km 查询 < 100ms | 高 |
-| **引入 Elasticsearch** | 支持复杂地理围栏 + 全文搜索 | 高 |
-| **返回字段裁剪** | 去掉 bio 等大字段，减少序列化开销 | 低 |
+| Optimization | Expected Impact | Difficulty |
+|-------------|----------------|------------|
+| JOIN query (eliminate N+1) | 50%+ latency reduction | Medium |
+| Redis GeoHash index | Sub-ms for large radius | High |
+| Spatial index (PostGIS / R-Tree) | <100ms for 1000km | High |
+| Elasticsearch | Geofencing + full-text search | High |
+| Field pruning (drop bio) | Lower serialization cost | Low |
 
 ---
 
 ## 🤖 AI Collaboration Log
 
-See `AI_LOG.md` for 3 key AI interactions:
-1. Haversine formula implementation
+See `AI_LOG.md` for 5 key AI interactions:
+1. Haversine formula implementation & nearby search optimization
 2. Prompt injection defense design
-3. Unit testing strategy for non-deterministic AI services
+3. Architecture extraction (SeedDataService)
+4. Adaptive nearby search
+5. Unit testing strategy for non-deterministic AI services
 
 ---
 

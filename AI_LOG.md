@@ -72,4 +72,4 @@ When a pattern matches, the system strips the matched text and returns a sanitiz
 1. **Deterministic mock** — Since `AiBioServiceImpl` uses fixed templates, same inputs produce same outputs.
 2. **Behavior contract** — Test what the bio *should contain/not contain* rather than exact string matching.
 
-**My Adjustment:** I wrote 7 unit tests plus additional ones for `PersonsService` (8 tests), `LocationsService` (13 tests), and `PersonControllerIntegrationTest` (18 tests), totaling 46 tests across 5 test classes.
+**My Adjustment:** I wrote 32 unit tests for AiBioService, 9 for PersonsService, 20 for LocationsService, and 23 integration tests for PersonController, totaling 84 tests across 5 test classes.
