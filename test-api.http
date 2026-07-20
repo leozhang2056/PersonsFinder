@@ -1,25 +1,25 @@
 ### =========================================================
-### Persons Finder — API 测试集合
-### 安装 IntelliJ IDEA 的 HTTP Client 或使用 VS Code REST Client
-### 点击请求左侧的 ▶ 即可执行
+### Persons Finder — API Test Collection
+### Use IntelliJ IDEA HTTP Client or VS Code REST Client
+### Click ▶ next to each request to execute
 ### =========================================================
 
-### 0. 创建测试数据（先插入 100 条测试数据）
+### 0. Seed test data (100 records first)
 POST http://localhost:5000/persons/seed?count=100
 
-### 1. 创建人员
+### 1. Create person
 POST http://localhost:5000/persons
 Content-Type: application/json
 
 {
-  "name": "张三",
+  "name": "John",
   "jobTitle": "Software Engineer",
   "hobbies": ["hiking", "photography", "chess"],
   "latitude": 31.2304,
   "longitude": 121.4737
 }
 
-### 2. 创建人员（仅位置简写）
+### 2. Create person (with nested location object)
 POST http://localhost:5000/persons
 Content-Type: application/json
 
@@ -33,13 +33,13 @@ Content-Type: application/json
   }
 }
 
-### 3. 获取所有人员 ID
+### 3. Get all person IDs
 GET http://localhost:5000/persons
 
-### 4. 获取指定人员详情（替换 {id} 为上一步返回的 ID）
+### 4. Get person by ID (replace {id} with ID from step 3)
 GET http://localhost:5000/persons/1
 
-### 5. 更新位置
+### 5. Update location
 PUT http://localhost:5000/persons/1/location
 Content-Type: application/json
 
@@ -48,35 +48,35 @@ Content-Type: application/json
   "longitude": -118.2437
 }
 
-### 6. 附近搜索（自适应，取最近 5 人）
+### 6. Nearby search (adaptive, ~5 closest)
 GET http://localhost:5000/persons/nearby?latitude=31.23&longitude=121.47&count=5
 
-### 7. 附近搜索（固定半径 10km，取最多 10 人）
+### 7. Nearby search (fixed 10km radius, up to 10 results)
 GET http://localhost:5000/persons/nearby?latitude=31.23&longitude=121.47&radius=10&count=10
 
-### 8. 附近搜索（纽约）
+### 8. Nearby search (New York)
 GET http://localhost:5000/persons/nearby?latitude=40.71&longitude=-74.01&count=5
 
-### 9. 附近搜索（东京）
+### 9. Nearby search (Tokyo)
 GET http://localhost:5000/persons/nearby?latitude=35.68&longitude=139.69&count=5
 
-### 10. 附近搜索（伦敦）
+### 10. Nearby search (London)
 GET http://localhost:5000/persons/nearby?latitude=51.51&longitude=-0.13&count=5
 
-### 11. 批量造数据（1000 条）
+### 11. Seed data (1,000 records)
 POST http://localhost:5000/persons/seed?count=1000
 
-### 12. 批量造数据（100 万条，性能测试）
+### 12. Seed data (1M records, performance test)
 POST http://localhost:5000/persons/seed?count=1000000
 
 ### =========================================================
-### 错误场景
+### Error scenarios
 ### =========================================================
 
-### 13. 人员不存在 → 应返回 404
+### 13. Non-existent person → expect 404
 GET http://localhost:5000/persons/99999
 
-### 14. 更新不存在的人员 → 应返回 404
+### 14. Update non-existent person → expect 404
 PUT http://localhost:5000/persons/99999/location
 Content-Type: application/json
 
@@ -85,7 +85,7 @@ Content-Type: application/json
   "longitude": -118.2437
 }
 
-### 15. 空名称 → 应返回 400
+### 15. Empty name → expect 400
 POST http://localhost:5000/persons
 Content-Type: application/json
 
@@ -97,7 +97,7 @@ Content-Type: application/json
   "longitude": 0
 }
 
-### 16. 无效经纬度 → 应返回 400
+### 16. Invalid lat/lon → expect 400
 POST http://localhost:5000/persons
 Content-Type: application/json
 
@@ -109,7 +109,7 @@ Content-Type: application/json
   "longitude": 200
 }
 
-### 17. 提示注入 → bio 不应包含注入内容
+### 17. Prompt injection → bio should not contain injected text
 POST http://localhost:5000/persons
 Content-Type: application/json
 
@@ -121,14 +121,14 @@ Content-Type: application/json
   "longitude": 0
 }
 
-### 18. 缺少必要参数 → 应返回 400
+### 18. Missing required params → expect 400
 GET http://localhost:5000/persons/nearby?count=5
 
-### 19. H2 数据库控制台
+### 19. H2 database console
 GET http://localhost:5000/h2-console
 
 ### 20. Swagger UI
 GET http://localhost:5000/swagger-ui/index.html
 
-### 21. 根路径重定向到 Swagger
+### 21. Root path redirects to Swagger
 GET http://localhost:5000/
