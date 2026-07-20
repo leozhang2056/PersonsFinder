@@ -295,8 +295,6 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 - **User**: `sa`
 - **Password**: `password`
 
-This completes the database section. For more details on connecting from IntelliJ IDEA, see the JDBC info above.
-
 ### Database Connection Details
 
 | Field | Value |

@@ -74,10 +74,10 @@ src/
 │       ├── LocationResponse.kt        # 位置响应体
 │       └── NearbyPersonResponse.kt    # 附近搜索响应体
 ├── test/kotlin/com/persons/finder/
-│   ├── AiBioServiceTest.kt            # AI 服务单元测试（7 项）
-│   ├── PersonsServiceTest.kt          # 人员服务单元测试（8 项）
-│   ├── LocationsServiceTest.kt        # 位置服务单元测试（13 项）
-│   ├── PersonControllerIntegrationTest.kt  # 集成测试（7 项）
+│   ├── AiBioServiceTest.kt            # AI 服务单元测试（32 项）
+│   ├── PersonsServiceTest.kt          # 人员服务单元测试（9 项）
+│   ├── LocationsServiceTest.kt        # 位置服务单元测试（20 项）
+│   ├── PersonControllerIntegrationTest.kt  # 集成测试（23 项）
 │   └── DemoApplicationTests.kt        # 上下文加载测试
 └── resources/
     └── application.properties         # 应用配置
@@ -127,6 +127,13 @@ gradlew.bat build        # Windows CMD
 > [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
 > ```
 > 后续启动检测到已有数据会自动跳过。
+
+### 切换环境
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=dev'   # 开发环境
+./gradlew bootRun --args='--spring.profiles.active=prod'  # 生产环境
+```
 
 ---
 
@@ -199,7 +206,7 @@ GET /persons/nearby?latitude=31.23&longitude=121.47
 GET /persons/nearby?latitude=31.23&longitude=121.47&radius=10
 
 # 指定目标人数
-GET /persons/nearby?latitude=31.23&longitude=121.47&count=30
+GET /persons/nearby?latitude=31.23&longitude=121.47&count=50
 ```
 
 **搜索策略**：
@@ -217,13 +224,17 @@ POST /persons/seed?count=1000000    # 100 万条性能测试
 > [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
 > ```
 
-### 7️⃣ 启动自动填充
-
-配置 `application.properties` 开启后，应用启动时自动插入数据：
+### 7️⃣ 多环境配置
 
 ```properties
-app.seed.enabled=true
-app.seed.count=1000000
+# 默认（共享配置）
+app.nearby.default-radius=10
+
+# 开发环境 (application-dev.properties)
+app.nearby.default-radius=5
+
+# 生产环境 (application-prod.properties)
+app.nearby.default-radius=20
 ```
 
 ---
@@ -237,9 +248,8 @@ app.seed.count=1000000
 ### 🌐 方式二：Swagger UI（推荐测试用）
 
 浏览器打开 `http://localhost:5000/swagger-ui/index.html`：
-- 每个接口都有**中文描述**和**示例数据**
+- 每个接口都有**描述**和**示例数据**
 - 点击 **"Try it out"** → 自动填充示例值 → 点击 **"Execute"** 执行
-- 无需记忆参数格式
 
 ### 🖥️ 方式三：一键冒烟测试（推荐 CI/验收用）
 
@@ -251,19 +261,19 @@ bash test-api.sh
 test-api.bat
 ```
 
-脚本自动测试 21 项，通过显示 ✅，失败显示 ❌：
+脚本自动测试 21 项：
 
 ```
-1️⃣ POST /persons — 创建人员          ✅
-2️⃣ GET /persons — 获取所有人 ID       ✅
-3️⃣ GET /persons/{id} — 人员详情       ✅
-4️⃣ PUT /persons/{id}/location — 更新位置 ✅
-5️⃣ GET /persons/nearby — 附近搜索     ✅
-6️⃣ GET /persons/seed — 批量造数据     ✅
-7️⃣ 404 错误处理                      ✅
-8️⃣ 400 参数校验                      ✅
-9️⃣ 基础设施（Swagger、H2 Console）   ✅
-🔟 提示注入防御                      ✅
+1️⃣ POST /persons — 创建人员              ✅
+2️⃣ GET /persons — 获取所有人 ID           ✅
+3️⃣ GET /persons/{id} — 人员详情           ✅
+4️⃣ PUT /persons/{id}/location — 更新位置   ✅
+5️⃣ GET /persons/nearby — 附近搜索         ✅
+6️⃣ POST /persons/seed — 批量造数据         ✅
+7️⃣ 404 错误处理                          ✅
+8️⃣ 400 参数校验                          ✅
+9️⃣ 基础设施（Swagger、H2 Console）        ✅
+🔟 提示注入防御                          ✅
 ```
 
 ---
@@ -273,10 +283,10 @@ test-api.bat
 默认使用 **H2 内存数据库**（重启数据清空，速度快）。可在 `application.properties` 切换模式：
 
 ```properties
-# ===== 内存模式（默认）=====
+# 内存模式（默认）
 spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 
-# ===== 文件模式（数据持久化）=====
+# 文件模式（数据持久化）
 # spring.datasource.url=jdbc:h2:file:./data/persons_finder;AUTO_SERVER=TRUE
 ```
 
@@ -309,14 +319,12 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 ./gradlew test
 ```
 
-覆盖范围：
-
 | 测试类 | 数量 | 内容 |
 |--------|------|------|
-| `AiBioServiceTest` | 7 项 | 正常输入、空爱好、注入检测、确定性验证 |
-| `PersonsServiceTest` | 8 项 | CRUD、存在性检查、批量保存、Seed Bio |
-| `LocationsServiceTest` | 13 项 | 距离计算（5）、附近搜索（6）、增删改查（6） |
-| `PersonControllerIntegrationTest` | 7 项 | 全链路集成测试 |
+| `AiBioServiceTest` | 32 | 正常输入、空爱好、注入检测、确定性验证 |
+| `PersonsServiceTest` | 9 | CRUD、存在性检查、批量保存、Seed Bio |
+| `LocationsServiceTest` | 20 | 距离计算（6）、附近搜索（7）、增删改查（7） |
+| `PersonControllerIntegrationTest` | 23 | 全链路集成测试 |
 
 ---
 
@@ -324,7 +332,7 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 
 ### 提示注入防御
 
-项目实现了 `AiBioServiceImpl.sanitize()` 方法，通过正则匹配过滤常见注入模式（如 `"ignore all instructions"`、`"say 'I am hacked'"` 等），确保用户无法通过爱好/姓名篡改 AI 生成的简介。详见 `SECURITY.md`。
+`AiBioServiceImpl.sanitize()` 使用正则匹配过滤常见注入模式（`"ignore all instructions"`、`"say 'I am hacked'"` 等），采用拦截拒绝策略而非文本剥离，确保任何被检测到的注入字段被整体替换为安全默认值。详见 `SECURITY.md`。
 
 ### PII 隐私保护
 
@@ -335,22 +343,57 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 
 ---
 
-## 📊 性能数据（H2 内存模式）
+## 📊 性能数据（H2 内存，100 万条数据）
 
-| 操作 | 耗时 | 速率 |
-|------|------|------|
-| 插入 1000 条 | < 1s | ~17,000/s |
-| 插入 100 万条 | ~59s | ~17,000/s |
-| 附近搜索（100 万条中取 30 人） | < 1s | — |
+### 数据插入
+
+| 指标 | 数据 |
+|------|------|
+| 总插入量 | 1,000,000 条 person + 1,000,000 条 location |
+| 总耗时 | **42 秒** |
+| 插入速率 | **23,809 条/秒** |
+| 插入方式 | JDBC 批量插入（绕过 JPA，每批 500 条） |
+
+### 附近搜索基准测试
+
+| 搜索场景 | 半径 | 返回条数 | 耗时 |
+|----------|------|---------|------|
+| 自适应搜索（默认） | 自动扩展 | 30 | **0.35s** |
+| 自适应搜索（10 条） | 自动扩展 | 10 | **0.34s** |
+| 固定半径 5km | 5km | 100 | **0.47s** |
+| 固定半径 10km | 10km | 100 | **0.48s** |
+| 固定半径 50km | 50km | 100 | **0.46s** |
+| 固定半径 100km | 100km | 100 | **0.50s** |
+| 固定半径 1000km | 1000km | 100 | **2.25s** |
+| 固定半径 2000km | 2000km | 100 | **4.15s** |
+| 固定半径 5000km | 5000km | 100 | **4.93s** |
+
+### 当前瓶颈
+
+1. **N+1 查询问题** — nearby 先查 location 列表，再逐个 `getById` 查 person，100 条结果 = 1 次 location + 100 次 person 查询
+2. **大范围边界框** — 1000km+ 半径时 H2 需扫描大量行
+3. **双重 Haversine** — SQL 算一次，Kotlin 再算一次
+
+### 优化方向
+
+| 优化项 | 预期效果 | 难度 |
+|--------|---------|------|
+| **JOIN 查询替代 N+1** | 耗时降低 50%+ | 中 |
+| **Redis GeoHash 索引** | 大半径毫秒级响应 | 高 |
+| **空间索引（PostGIS / R-Tree）** | 1000km 查询 < 100ms | 高 |
+| **Elasticsearch** | 地理围栏 + 全文搜索 | 高 |
+| **返回字段裁剪** | 降低序列化开销 | 低 |
 
 ---
 
 ## 🤖 AI 协作记录
 
-详见 `AI_LOG.md`，记录了 3 次关键 AI 交互：
-1. Haversine 公式实现
+详见 `AI_LOG.md`，记录了 5 次关键 AI 交互：
+1. Haversine 距离算法与附近搜索优化
 2. 提示注入防御设计
-3. 非确定性 AI 服务的单元测试策略
+3. 架构重构 — 抽取 SeedDataService
+4. 可配置常量与多环境配置
+5. 非确定性 AI 服务的单元测试策略
 
 ---
 
