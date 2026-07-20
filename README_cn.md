@@ -277,6 +277,20 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 - **用户名**: `sa`
 - **密码**: `password`
 
+### 数据库连接信息
+
+| 字段 | 值 |
+|------|-----|
+| **数据库类型** | H2（内存/文件） |
+| **JDBC 驱动** | `org.h2.Driver` |
+| **JDBC URL（内存）** | `jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1` |
+| **JDBC URL（文件）** | `jdbc:h2:file:./data/persons_finder;AUTO_SERVER=TRUE` |
+| **用户名** | `sa` |
+| **密码** | `password` |
+| **H2 控制台** | `http://localhost:5000/h2-console` |
+
+可在 IntelliJ IDEA Database 工具中直接添加 H2 数据源，填入上述信息即可连接。
+
 ---
 
 ## 🧪 运行单元测试

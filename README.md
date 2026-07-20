@@ -285,6 +285,18 @@ spring.datasource.url=jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1
 - **User**: `sa`
 - **Password**: `password`
 
+### Database Connection Details
+
+| Field | Value |
+|-------|-------|
+| **Type** | H2 (in-memory / file) |
+| **Driver** | `org.h2.Driver` |
+| **JDBC URL (memory)** | `jdbc:h2:mem:persons_finder;DB_CLOSE_DELAY=-1` |
+| **JDBC URL (file)** | `jdbc:h2:file:./data/persons_finder;AUTO_SERVER=TRUE` |
+| **Username** | `sa` |
+| **Password** | `password` |
+| **Console** | `http://localhost:5000/h2-console` |
+
 ---
 
 ## 🧪 Running Tests
