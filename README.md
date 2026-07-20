@@ -2,6 +2,45 @@
 
 Welcome to the **Persons Finder** backend challenge! This project simulates the backend for a mobile app that helps users find people around them, built with **Kotlin + Spring Boot 2.7**.
 
+**Context:** At our company, we believe AI is a tool, not a replacement. We want to see how you leverage AI to code faster, think deeper, and build secure systems.
+
+---
+
+## 📌 Original Challenge Requirements
+
+> Below is the original challenge prompt. ✅ marks show how each requirement was fulfilled in this implementation.
+
+### ➕ `POST /persons` ✅
+Create a new person.
+*   **Input:** Name, Job Title, Hobbies, Location (lat/lon). ✅
+*   **AI Integration:** Generates a **short, quirky bio** based on job + hobbies. ✅
+    *   Mock implementation (`AiBioServiceImpl`) — architecture supports swapping to real LLM. ✅
+
+### ✏️ `PUT /persons/{id}/location` ✅
+Update a person's current location. ✅
+
+### 🔍 `GET /persons/nearby` ✅
+Find people around a query location (lat, lon, radius). ✅
+*   **Output:** List of persons (including the AI bio), sorted by distance. ✅
+
+### 🤖 AI Challenge
+*   **AI Usage:** `AI_LOG.md` documents 5 key AI collaboration interactions. ✅
+*   **Prompt Injection Protection:** `AiBioServiceImpl.sanitize()` blocks injection patterns. ✅
+*   **SECURITY.md:** Discusses input sanitization and PII privacy risks. ✅
+
+### 📦 Expected Output
+*   **Code:** Clean Controller/Service/Repository layered architecture. ✅
+*   **Storage:** H2 in-memory database (file mode available). ✅
+*   **Docs:** `README.md`, `AI_LOG.md`, `SECURITY.md`. ✅
+
+### 🧪 Bonus Points
+*   **Scalability:** 1M records seeded, nearby search benchmarked (< 1s). ✅
+*   **Clean Code:** DDD-inspired package structure with interfaces. ✅
+*   **Testing:** 46 unit tests (7 AI service tests covering non-deterministic behavior). ✅
+
+### 📬 Submission
+> Repository: https://github.com/leozhang2056/PersonsFinder.git
+
 ---
 
 ## 📦 Project Structure
@@ -269,13 +308,51 @@ See `SECURITY.md` for discussion on:
 
 ---
 
-## 📊 Performance (H2 in-memory)
+## 📊 Performance (100万数据 H2 内存数据库)
 
-| Operation | Time | Rate |
-|-----------|------|------|
-| Insert 1,000 records | < 1s | ~17,000/s |
-| Insert 1,000,000 records | ~59s | ~17,000/s |
-| Nearby search (30 from 1M) | < 1s | — |
+### 数据插入
+
+| 指标 | 数据 |
+|------|------|
+| 总插入量 | 1,000,000 条 person + 1,000,000 条 location |
+| 总耗时 | **42 秒** |
+| 插入速率 | **23,809 条/秒** |
+| 插入方式 | JDBC 批量插入（绕过 JPA，每批 500 条） |
+
+### Nearby 接口查询耗时
+
+| 搜索场景 | 半径 | 返回条数 | 耗时 |
+|----------|------|---------|------|
+| 自适应搜索（默认） | 自动扩展 | 30 | **0.35s** |
+| 自适应搜索（10条） | 自动扩展 | 10 | **0.34s** |
+| 固定半径 5km | 5km | 100 | **0.47s** |
+| 固定半径 10km | 10km | 100 | **0.48s** |
+| 固定半径 50km | 50km | 100 | **0.46s** |
+| 固定半径 100km | 100km | 100 | **0.50s** |
+| 固定半径 1000km | 1000km | 100 | **2.25s** |
+| 固定半径 2000km | 2000km | 100 | **4.15s** |
+| 固定半径 5000km | 5000km | 100 | **4.93s** |
+
+### 当前瓶颈分析
+
+**1. N+1 查询问题（主要瓶颈）**
+nearby 接口先查出 location 列表，再逐个 `getById` 查 person 信息。100 条结果 = 1 次 location 查询 + 100 次 person 查询。
+
+**2. 大半径时 Bounding Box 范围过大**
+1000km+ 半径时，bounding box 覆盖区域大，H2 需要扫描大量行做距离计算和排序。
+
+**3. SQL 层距离计算精度问题**
+native query 中的距离计算使用简化公式，与 Kotlin 层的精确 Haversine 存在微小偏差，导致需要二次过滤。
+
+### 优化方向
+
+| 优化项 | 预期效果 | 难度 |
+|--------|---------|------|
+| **JOIN 查询替代 N+1** | nearby 接口耗时降低 50%+ | 中 |
+| **Redis GeoHash 索引** | 大半径查询从秒级降到毫秒级 | 高 |
+| **空间索引（PostGIS / R-Tree）** | 1000km 查询 < 100ms | 高 |
+| **引入 Elasticsearch** | 支持复杂地理围栏 + 全文搜索 | 高 |
+| **返回字段裁剪** | 去掉 bio 等大字段，减少序列化开销 | 低 |
 
 ---
 
