@@ -121,6 +121,13 @@ gradlew.bat build        # Windows CMD
 - 🌐 **API 地址**: `http://localhost:5000`（自动重定向到 Swagger）
 - 📖 **Swagger 文档**: `http://localhost:5000/swagger-ui/index.html`
 
+> ⏳ **首次启动**会自动插入 **100 万条数据**（约 60 秒）。
+> 控制台会输出进度：
+> ```
+> [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
+> ```
+> 后续启动检测到已有数据会自动跳过。
+
 ---
 
 ## 🔌 API 接口
@@ -205,6 +212,10 @@ GET /persons/nearby?latitude=31.23&longitude=121.47&count=30
 POST /persons/seed?count=1000       # 小批量
 POST /persons/seed?count=1000000    # 100 万条性能测试
 ```
+> 控制台每 3 秒输出一次进度：
+> ```
+> [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
+> ```
 
 ### 7️⃣ 启动自动填充
 

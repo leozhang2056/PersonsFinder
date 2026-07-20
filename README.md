@@ -205,6 +205,10 @@ GET /persons/nearby?latitude=40.71&longitude=-74.01&count=50
 POST /persons/seed?count=1000        # Small batch
 POST /persons/seed?count=1000000     # 1M performance test
 ```
+> Console outputs progress every 3 seconds:
+> ```
+> [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
+> ```
 
 ### 7️⃣ Multi-profile configuration
 
@@ -223,6 +227,13 @@ Run with profile:
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=dev'
 ```
+
+> ⏳ **On first start** the app auto-inserts **1,000,000 records** (~60 seconds).
+> Watch the console for progress output like:
+> ```
+> [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
+> ```
+> Subsequent starts skip seeding because data already exists.
 
 ---
 
