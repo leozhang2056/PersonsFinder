@@ -223,18 +223,6 @@ app.nearby.default-radius=5
 app.nearby.default-radius=20
 ```
 
-Run with profile:
-```bash
-./gradlew bootRun --args='--spring.profiles.active=dev'
-```
-
-> ⏳ **On first start** the app auto-inserts **1,000,000 records** (~60 seconds).
-> Watch the console for progress output like:
-> ```
-> [seed] 49500 / 1000000 inserted (1178/s, 42s elapsed)
-> ```
-> Subsequent starts skip seeding because data already exists.
-
 ---
 
 ## ✅ Testing Methods

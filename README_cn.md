@@ -128,13 +128,6 @@ gradlew.bat build        # Windows CMD
 > ```
 > 后续启动检测到已有数据会自动跳过。
 
-### 切换环境
-
-```bash
-./gradlew bootRun --args='--spring.profiles.active=dev'   # 开发环境
-./gradlew bootRun --args='--spring.profiles.active=prod'  # 生产环境
-```
-
 ---
 
 ## 🔌 API 接口
