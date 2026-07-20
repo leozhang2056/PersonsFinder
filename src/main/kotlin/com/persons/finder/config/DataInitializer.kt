@@ -1,5 +1,6 @@
 package com.persons.finder.config
 
+import com.persons.finder.service.PersonsService
 import com.persons.finder.service.SeedDataService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class DataInitializer(
+    private val personsService: PersonsService,
     private val seedDataService: SeedDataService,
     @Value("\${app.seed.enabled:false}") private val seedEnabled: Boolean,
     @Value("\${app.seed.count:1000}") private val seedCount: Int
@@ -17,9 +19,16 @@ class DataInitializer(
 
     override fun run(vararg args: String) {
         if (!seedEnabled) {
-            log.info("Auto-seed is disabled. Set app.seed.enabled=true in application.properties to enable.")
+            log.info("Auto-seed disabled (app.seed.enabled=false)")
             return
         }
+
+        val existing = personsService.countAll()
+        if (existing > 0) {
+            log.info("Database already has {} records, auto-seed skipped", existing)
+            return
+        }
+
         log.info("Auto-seed enabled: inserting {} records...", seedCount)
         val start = System.currentTimeMillis()
         val result = seedDataService.seed(seedCount)
