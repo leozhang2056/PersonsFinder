@@ -122,17 +122,22 @@ class PersonControllerIntegrationTest {
 
     @Test
     @Order(5)
-    fun `GET all ids should return list containing created person`() {
-        val response = getForMap("http://localhost:$port/persons")
+    fun `GET all ids should return paginated structure`() {
+        val response = restTemplate.getForEntity(
+            "http://localhost:$port/persons?page=0&size=3",
+            String::class.java
+        )
 
         Assertions.assertEquals(HttpStatus.OK, response.statusCode)
         Assertions.assertNotNull(response.body)
-        Assertions.assertTrue(response.body!!["success"] as Boolean)
-
-        @Suppress("UNCHECKED_CAST")
-        val ids = response.body!!["data"] as List<Number>
-        val idList = ids.map { it.toLong() }
-        Assertions.assertTrue(idList.contains(createdPersonId))
+        Assertions.assertTrue(response.body!!.contains("\"success\":true"))
+        Assertions.assertTrue(response.body!!.contains("\"items\""))
+        Assertions.assertTrue(response.body!!.contains("\"totalItems\""))
+        Assertions.assertTrue(response.body!!.contains("\"totalPages\""))
+        // Verify created person exists via detail endpoint
+        val detail = restTemplate.getForEntity("http://localhost:$port/persons/$createdPersonId", String::class.java)
+        Assertions.assertEquals(HttpStatus.OK, detail.statusCode)
+        Assertions.assertTrue(detail.body!!.contains("\"id\":$createdPersonId"))
     }
 
     @Test

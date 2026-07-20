@@ -11,6 +11,7 @@ import com.persons.finder.vo.CreatePersonRequest
 import com.persons.finder.vo.LocationResponse
 import com.persons.finder.vo.LocationUpdateRequest
 import com.persons.finder.vo.NearbyPersonResponse
+import com.persons.finder.vo.PageResult
 import com.persons.finder.vo.PersonAssembler.hobbiesList
 import com.persons.finder.vo.PersonAssembler.toResponse
 import com.persons.finder.vo.PersonAssembler.validateLatitude
@@ -162,9 +163,19 @@ class PersonController(
     // ==================== GET /persons  /  GET /persons/{id} ====================
 
     @GetMapping
-    @Operation(summary = "List all person IDs", description = "Returns a list of all person IDs in the database.")
-    fun getAllPersonIds(): ApiResponse<List<Long>> =
-        ApiResponse.success(personsService.findAll().map { it.id })
+    @Operation(summary = "List all person IDs", description = "Returns a paginated list of all person IDs in the database. Default: page=0, size=20.")
+    fun getAllPersonIds(
+        @Parameter(description = "Page number (0-based)", example = "0")
+        @RequestParam(defaultValue = "0") page: Int,
+        @Parameter(description = "Page size", example = "20")
+        @RequestParam(defaultValue = "20") size: Int
+    ): ApiResponse<PageResult<Long>> {
+        require(page >= 0) { "page must be >= 0" }
+        require(size in 1..1000) { "size must be between 1 and 1000" }
+        val totalItems = personsService.countAll()
+        val items = personsService.findAllPaginated(page, size).map { it.id }
+        return ApiResponse.success(PageResult.of(items, page, size, totalItems))
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get person details", description = "Returns full person details (including location and AI bio) by ID.")
