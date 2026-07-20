@@ -4,26 +4,23 @@ import com.persons.finder.domain.Person
 import com.persons.finder.mapper.PersonRepository
 import com.persons.finder.service.PersonsServiceImpl
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import java.util.Optional
 
-@ExtendWith(MockKExtension::class)
 class PersonsServiceTest {
 
-    @MockK
     private lateinit var personRepository: PersonRepository
-
     private lateinit var personsService: PersonsServiceImpl
 
     @BeforeEach
     fun setUp() {
+        personRepository = io.mockk.mockk()
         personsService = PersonsServiceImpl(personRepository)
     }
 
@@ -59,44 +56,56 @@ class PersonsServiceTest {
     }
 
     @Test
-    fun `findAll should return all persons`() {
+    fun `findAllPaginated should return paginated results`() {
         val persons = listOf(
-            Person(id = 1, name = "Alice"),
-            Person(id = 2, name = "Bob")
+            Person(id = 11, name = "Alice_11"),
+            Person(id = 12, name = "Bob_12")
         )
-        every { personRepository.findAll() } returns persons
+        every { personRepository.findAllWithLimit(10L, 10L) } returns persons
 
-        val result = personsService.findAll()
+        val result = personsService.findAllPaginated(1, 10)
 
         assertEquals(2, result.size)
-        assertEquals("Alice", result[0].name)
+        assertEquals("Alice_11", result[0].name)
     }
 
     @Test
-    fun `findAll should return empty list when no persons`() {
-        every { personRepository.findAll() } returns emptyList()
+    fun `findAllPaginated page 0 should start from offset 0`() {
+        every { personRepository.findAllWithLimit(20L, 0L) } returns emptyList()
 
-        val result = personsService.findAll()
+        val result = personsService.findAllPaginated(0, 20)
 
-        assertEquals(0, result.size)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `countAll should return total count`() {
+        every { personRepository.countAll() } returns 1000000L
+
+        val result = personsService.countAll()
+
+        assertEquals(1000000L, result)
+    }
+
+    @Test
+    fun `countAll should return 0 when empty`() {
+        every { personRepository.countAll() } returns 0L
+
+        assertEquals(0L, personsService.countAll())
     }
 
     @Test
     fun `existsById should return true when person exists`() {
         every { personRepository.existsById(1L) } returns true
 
-        val result = personsService.existsById(1)
-
-        assertEquals(true, result)
+        assertTrue(personsService.existsById(1))
     }
 
     @Test
     fun `existsById should return false when person does not exist`() {
         every { personRepository.existsById(999L) } returns false
 
-        val result = personsService.existsById(999)
-
-        assertEquals(false, result)
+        assertFalse(personsService.existsById(999))
     }
 
     @Test
@@ -118,5 +127,12 @@ class PersonsServiceTest {
         val bio = personsService.generateSeedBio("Engineer", listOf("hiking", "chess"))
 
         assertEquals("A Engineer who turns hiking and chess into surprisingly good conversation.", bio)
+    }
+
+    @Test
+    fun `generateSeedBio should use default when job is blank`() {
+        val bio = personsService.generateSeedBio("", listOf("reading"))
+
+        assertTrue(bio.contains("curious human"))
     }
 }

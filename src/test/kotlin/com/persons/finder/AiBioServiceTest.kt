@@ -133,9 +133,7 @@ class AiBioServiceTest {
     @Test
     fun `sanitize should strip backticks and angle brackets`() {
         val result = aiBioService.sanitize("<script>alert(1)</script>")
-        val expected = aiBioService.sanitize("<script>alert(1)</script>")
 
-        // just verify brackets are removed and output is clean
         assertFalse(result.contains("<"))
         assertFalse(result.contains(">"))
         assertTrue(result.isNotBlank())

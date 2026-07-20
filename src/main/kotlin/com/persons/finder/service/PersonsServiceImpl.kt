@@ -25,8 +25,6 @@ class PersonsServiceImpl(
         return personRepository.saveAll(persons)
     }
 
-    override fun findAll(): List<Person> = personRepository.findAll()
-
     override fun findAllPaginated(page: Int, size: Int): List<Person> {
         val start = page.toLong() * size
         return personRepository.findAllWithLimit(size.toLong(), start)
@@ -34,9 +32,7 @@ class PersonsServiceImpl(
 
     override fun countAll(): Long = personRepository.countAll()
 
-    fun existsById(id: Long): Boolean = personRepository.existsById(id)
-
-    // ==================== Seed bio helper ====================
+    override fun existsById(id: Long): Boolean = personRepository.existsById(id)
 
     override fun generateSeedBio(jobTitle: String, hobbies: List<String>): String {
         val safeJob = jobTitle.ifBlank { "curious human" }

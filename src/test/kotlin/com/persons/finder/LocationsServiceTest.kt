@@ -224,4 +224,48 @@ class LocationsServiceTest {
         locationsService.addAllLocations(locations)
         verify { locationRepository.saveAll(locations) }
     }
+
+    // ========== findAroundAdaptive ==========
+
+    @Test
+    fun `findAroundAdaptive should expand radius until enough results`() {
+        val locations = (1..10).map {
+            Location(personId = it.toLong(), latitude = 40.0 + it * 0.01, longitude = -74.0)
+        }
+
+        every { locationRepository.findWithinBounds(any(), any(), any(), any(), any(), any(), any()) } returns locations
+
+        val (result, usedRadius) = locationsService.findAroundAdaptive(40.0, -74.0, 5, 1000.0)
+
+        assertTrue(result.size <= 5)
+        assertTrue(usedRadius > 0)
+    }
+
+    @Test
+    fun `findAroundAdaptive should return all if fewer than target in max radius`() {
+        val locations = listOf(
+            Location(personId = 1, latitude = 40.01, longitude = -74.0)
+        )
+
+        every { locationRepository.findWithinBounds(any(), any(), any(), any(), any(), any(), any()) } returns locations
+
+        val (result, usedRadius) = locationsService.findAroundAdaptive(40.0, -74.0, 100, 10.0)
+
+        assertEquals(1, result.size)
+        assertEquals(10.0, usedRadius)
+    }
+
+    @Test
+    fun `findAroundAdaptive should throw on invalid latitude`() {
+        assertThrows<IllegalArgumentException> {
+            locationsService.findAroundAdaptive(100.0, 0.0, 10, 100.0)
+        }
+    }
+
+    @Test
+    fun `findAroundAdaptive should throw on zero targetCount`() {
+        assertThrows<IllegalArgumentException> {
+            locationsService.findAroundAdaptive(40.0, -74.0, 0, 100.0)
+        }
+    }
 }
